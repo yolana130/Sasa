@@ -29,12 +29,15 @@ const CategoryPage: React.FC = () => {
   const loadProducts = async () => {
     setLoading(true);
     try {
+      console.log('Loading products for category:', category);
       const fetchedProducts = await getProductsByCategory(category);
+      console.log('Fetched products:', fetchedProducts);
       setProducts(fetchedProducts);
       
       // Extract unique subcategories
       const uniqueSubcategories = [...new Set(fetchedProducts.map(p => p.subcategory))];
       setSubcategories(uniqueSubcategories);
+      console.log('Subcategories:', uniqueSubcategories);
     } catch (error) {
       console.error('Error loading products:', error);
     } finally {
@@ -56,22 +59,25 @@ const CategoryPage: React.FC = () => {
   const handleAddProduct = async (productData: Omit<Product, 'id'>) => {
     setSaving(true);
     try {
+      console.log('Adding product:', productData);
       const newProductId = await addProduct({
         ...productData,
         category: category
       });
       
       if (newProductId) {
+        console.log('Product added successfully with ID:', newProductId);
         // Reload products to get the updated list
         await loadProducts();
         setShowAddForm(false);
         alert('Producto agregado exitosamente');
       } else {
+        console.error('Failed to add product - no ID returned');
         alert('Error al agregar el producto');
       }
     } catch (error) {
       console.error('Error adding product:', error);
-      alert('Error al agregar el producto');
+      alert('Error al agregar el producto: ' + error);
     } finally {
       setSaving(false);
     }
@@ -82,19 +88,22 @@ const CategoryPage: React.FC = () => {
     
     setSaving(true);
     try {
+      console.log('Updating product:', productData);
       const success = await updateProduct(productData.id, productData);
       
       if (success) {
+        console.log('Product updated successfully');
         // Reload products to get the updated list
         await loadProducts();
         setEditingProduct(null);
         alert('Producto actualizado exitosamente');
       } else {
+        console.error('Failed to update product');
         alert('Error al actualizar el producto');
       }
     } catch (error) {
       console.error('Error updating product:', error);
-      alert('Error al actualizar el producto');
+      alert('Error al actualizar el producto: ' + error);
     } finally {
       setSaving(false);
     }
@@ -107,18 +116,21 @@ const CategoryPage: React.FC = () => {
     
     setSaving(true);
     try {
+      console.log('Deleting product:', id);
       const success = await deleteProduct(id);
       
       if (success) {
+        console.log('Product deleted successfully');
         // Reload products to get the updated list
         await loadProducts();
         alert('Producto eliminado exitosamente');
       } else {
+        console.error('Failed to delete product');
         alert('Error al eliminar el producto');
       }
     } catch (error) {
       console.error('Error deleting product:', error);
-      alert('Error al eliminar el producto');
+      alert('Error al eliminar el producto: ' + error);
     } finally {
       setSaving(false);
     }
@@ -144,6 +156,8 @@ const CategoryPage: React.FC = () => {
         alert('Por favor completa todos los campos obligatorios');
         return;
       }
+
+      console.log('Form data:', formData);
 
       if (product && product.id) {
         onSubmit({ ...product, ...formData });
@@ -302,6 +316,15 @@ const CategoryPage: React.FC = () => {
             </button>
           )}
         </div>
+
+        {/* Debug info - solo visible en desarrollo */}
+        {process.env.NODE_ENV === 'development' && isAuthenticated && (
+          <div className="mb-4 p-4 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              Debug: Categoría actual: {category} | Productos encontrados: {products.length} | Subcategorías: {subcategories.length}
+            </p>
+          </div>
+        )}
 
         {subcategories.length > 0 ? (
           subcategories.map((subcategory) => (
