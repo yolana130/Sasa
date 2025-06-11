@@ -9,6 +9,7 @@ const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [accessoriosClicks, setAccessoriosClicks] = useState(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [clickTimeout, setClickTimeout] = useState<NodeJS.Timeout | null>(null);
   const location = useLocation();
 
   const menuItems = [
@@ -22,21 +23,39 @@ const Navbar: React.FC = () => {
     { name: 'Accesorios', path: '/accesorios' },
   ];
 
-  const handleAccessoriosClick = () => {
+  const handleAccessoriosClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevenir la navegación inmediata
+    
     const newCount = accessoriosClicks + 1;
+    console.log(`Accesorios click ${newCount}/3`);
     setAccessoriosClicks(newCount);
     
-    if (newCount === 3) {
-      setShowLoginModal(true);
-      setAccessoriosClicks(0);
+    // Limpiar timeout anterior si existe
+    if (clickTimeout) {
+      clearTimeout(clickTimeout);
     }
     
-    // Reset counter after 5 seconds if not completed
-    setTimeout(() => {
-      if (newCount < 3) {
+    if (newCount === 3) {
+      console.log('Opening login modal');
+      setShowLoginModal(true);
+      setAccessoriosClicks(0);
+      setClickTimeout(null);
+    } else {
+      // Resetear contador después de 3 segundos si no se completan los 3 clicks
+      const timeout = setTimeout(() => {
+        console.log('Resetting click counter');
         setAccessoriosClicks(0);
-      }
-    }, 5000);
+        setClickTimeout(null);
+      }, 3000);
+      setClickTimeout(timeout);
+      
+      // Navegar normalmente después de un pequeño delay si no es el tercer click
+      setTimeout(() => {
+        if (newCount < 3) {
+          window.location.href = '/accesorios';
+        }
+      }, 200);
+    }
   };
 
   return (
@@ -56,18 +75,36 @@ const Navbar: React.FC = () => {
               <div className="flex items-center justify-center">
                 <div className="flex items-center space-x-1 overflow-x-auto scrollbar-hide max-w-full">
                   {menuItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.path}
-                      onClick={item.name === 'Accesorios' ? handleAccessoriosClick : undefined}
-                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-shrink-0 ${
-                        location.pathname === item.path
-                          ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                          : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                      }`}
-                    >
-                      {item.name}
-                    </Link>
+                    item.name === 'Accesorios' ? (
+                      <button
+                        key={item.name}
+                        onClick={handleAccessoriosClick}
+                        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-shrink-0 ${
+                          location.pathname === item.path
+                            ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                            : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        } ${accessoriosClicks > 0 ? 'ring-2 ring-blue-300 dark:ring-blue-600' : ''}`}
+                      >
+                        {item.name}
+                        {accessoriosClicks > 0 && (
+                          <span className="ml-1 text-xs bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center">
+                            {accessoriosClicks}
+                          </span>
+                        )}
+                      </button>
+                    ) : (
+                      <Link
+                        key={item.name}
+                        to={item.path}
+                        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-shrink-0 ${
+                          location.pathname === item.path
+                            ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                            : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        {item.name}
+                      </Link>
+                    )
                   ))}
                 </div>
               </div>
@@ -96,21 +133,40 @@ const Navbar: React.FC = () => {
           <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
             <div className="px-2 pt-2 pb-3 space-y-1 max-h-96 overflow-y-auto">
               {menuItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    if (item.name === 'Accesorios') handleAccessoriosClick();
-                  }}
-                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
-                    location.pathname === item.path
-                      ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                      : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  {item.name}
-                </Link>
+                item.name === 'Accesorios' ? (
+                  <button
+                    key={item.name}
+                    onClick={(e) => {
+                      setIsMenuOpen(false);
+                      handleAccessoriosClick(e);
+                    }}
+                    className={`block w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
+                      location.pathname === item.path
+                        ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                        : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    } ${accessoriosClicks > 0 ? 'ring-2 ring-blue-300 dark:ring-blue-600' : ''}`}
+                  >
+                    {item.name}
+                    {accessoriosClicks > 0 && (
+                      <span className="ml-2 text-xs bg-blue-500 text-white rounded-full w-4 h-4 inline-flex items-center justify-center">
+                        {accessoriosClicks}
+                      </span>
+                    )}
+                  </button>
+                ) : (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
+                      location.pathname === item.path
+                        ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                        : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                )
               ))}
             </div>
           </div>
